@@ -8,7 +8,9 @@ import babel
 from flask import Flask, render_template, request, Response, flash, redirect, url_for
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import distinct
 import logging
+from collections import Counter
 from logging import Formatter, FileHandler
 from flask_wtf import FlaskForm
 from flask_migrate import Migrate
@@ -39,7 +41,7 @@ class Venue(db.Model):
     state = db.Column(db.String(120))
     address = db.Column(db.String(120))
     phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
+    genres = db.Column(db.String)
     #image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     #website = db.Column(db.String(500))
@@ -57,7 +59,7 @@ class Artist(db.Model):
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
     phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
+    genres = db.Column(db.String)
     #image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
     venues = db.relationship('Show', back_populates='artist')
@@ -103,7 +105,6 @@ def index():
 
 @app.route('/venues')
 def venues():
-  # TODO: replace with real venues data.
   #       num_shows should be aggregated based on number of upcoming shows per venue.
   data=[{
     "city": "San Francisco",
@@ -126,7 +127,35 @@ def venues():
       "num_upcoming_shows": 0,
     }]
   }]
-  return render_template('pages/venues.html', areas=data)
+  
+  data1= [] 
+  ven_local = {}
+  #Loop through distinct cities grouped by states results in unique city/state combo
+  for x in db.session.query(distinct(Venue.city),Venue.state).group_by(Venue.state,Venue.city).all():
+    ven_info = {}
+    ven_list = []
+    ven_local['city'] = x[0]
+    ven_local['state'] = x[1]
+    #Add all venues associated with each city/state
+    for ven in db.session.query(Venue.id,Venue.name).filter(Venue.city==x[0],Venue.state==x[1]).all():
+      #Build secondary dict
+      ven_info['id'] = ven[0]
+      ven_info['name'] = ven[1]
+      ven_list.append(ven_info.copy())
+    #Add venue list to the dict
+    ven_local['venues'] = ven_list
+
+    #Store venue info in a list
+    data1.append(ven_local.copy())
+
+  #city =[]
+  #no_venues = []
+  #Finds number of venues in each city
+  #for v in areas.values(): 
+  #  city.append(list(Counter(v).keys()))
+  #  no_venues.append(list(Counter(v).values()))
+
+  return render_template('pages/venues.html', areas=data1)
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
@@ -145,8 +174,7 @@ def search_venues():
 
 @app.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
-  # shows the venue page with the given venue_id
-  # TODO: replace with real venue data from the venues table, using venue_id
+  
   data1={
     "id": 1,
     "name": "The Musical Hop",
@@ -224,8 +252,36 @@ def show_venue(venue_id):
     "past_shows_count": 1,
     "upcoming_shows_count": 1,
   }
-  data = list(filter(lambda d: d['id'] == venue_id, [data1, data2, data3]))[0]
-  return render_template('pages/show_venue.html', venue=data)
+
+  # shows the venue page with the given venue_id
+  #Dict to store query retrieved
+  selected_venue={}
+
+  #Query for the selected venue
+  for venue in db.session.query(Venue).filter_by(id = venue_id).all():
+    selected_venue = venue.__dict__
+
+  print(selected_venue)
+
+  #Append string of Generes into a list
+  genres = selected_venue['genres']
+  print(genres)
+  genres_list=['']
+  i = 0
+  for char in genres:
+    if char == "{" or char == "}":
+      continue
+    elif char == ",":
+      i+=1
+      genres_list.append('')
+    else:
+      genres_list[i] = genres_list[i] + char
+
+  #Replace string data with new list
+  selected_venue['genres'] = genres_list
+
+  #data = list(filter(lambda d: d['id'] == venue_id, [data1, data2, data3]))[0]
+  return render_template('pages/show_venue.html', venue=selected_venue)
 
 #  Create Venue
 #  ----------------------------------------------------------------
@@ -245,7 +301,7 @@ def create_venue_submission():
   vstate = data['state']
   vaddress = data['address']
   vphone = data['phone']
-  vgenres = data['genres']
+  vgenres = data.getlist('genres')
   vfb_link = data['facebook_link']
   #vimage_link = data['image_link']
   try:
@@ -292,7 +348,6 @@ def delete_venue(venue_id):
 #  ----------------------------------------------------------------
 @app.route('/artists')
 def artists():
-  # TODO: replace with real data returned from querying the database
   data=[{
     "id": 4,
     "name": "Guns N Petals",
@@ -303,7 +358,10 @@ def artists():
     "id": 6,
     "name": "The Wild Sax Band",
   }]
-  return render_template('pages/artists.html', artists=data)
+  #Replace with real data returned from querying the database
+  artists = db.session.query(Artist.id,Artist.name).all()
+
+  return render_template('pages/artists.html', artists=artists)
 
 @app.route('/artists/search', methods=['POST'])
 def search_artists():
@@ -395,8 +453,31 @@ def show_artist(artist_id):
     "past_shows_count": 0,
     "upcoming_shows_count": 3,
   }
-  data = list(filter(lambda d: d['id'] == artist_id, [data1, data2, data3]))[0]
-  return render_template('pages/show_artist.html', artist=data)
+ 
+  #Dict to store query results
+  selected_artist={}
+
+  #Query for the selected artist (Is there a way to do this without for loop?)
+  for artist in db.session.query(Artist).filter_by(id = artist_id).all():
+    selected_artist = artist.__dict__
+
+  #Append string of Generes into a list
+  genres = selected_artist['genres']
+  genres_list=['']
+  i = 0
+  for char in genres:
+    if char == "{" or char == "}":
+      continue
+    elif char == ",":
+      i+=1
+      genres_list.append('')
+    else:
+      genres_list[i] = genres_list[i] + char
+
+  #Replace string data with new list
+  selected_artist['genres'] = genres_list
+  #data = list(filter(lambda d: d['id'] == artist_id, [data1,data2,data3] ))[0]
+  return render_template('pages/show_artist.html', artist=selected_artist)
 
 #  Update
 #  ----------------------------------------------------------------
@@ -470,7 +551,8 @@ def create_artist_submission():
   acity = data['city']
   astate = data['state']
   aphone = data['phone']
-  agenres = data['genres']
+  agenres = data.getlist('genres')
+  print(agenres)
   afb_link = data['facebook_link']
 
   try:
