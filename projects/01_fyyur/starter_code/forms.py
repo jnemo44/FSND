@@ -224,6 +224,9 @@ class ArtistForm(FlaskForm):
             ('Other', 'Other'),
         ]
     )
+    website_link = StringField(
+        'website_link', validators=[URL()]
+    )
     facebook_link = StringField(
         # TODO implement enum restriction
         'facebook_link', validators=[URL()]

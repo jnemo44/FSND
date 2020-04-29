@@ -347,12 +347,11 @@ def create_venue_submission():
   vgenres = data.getlist('genres')
   vfb_link = data['facebook_link']
   vweb_link = data['website_link']
-  vtalent = data['seeking_talent']
-  vdescription = data['seeking_description']
-  if vtalent == 'y':
-    vtalent = True
-  else:
+  if 'seeking_talent' not in data:
     vtalent = False
+  else:
+    vtalent = True
+  vdescription = data['seeking_description']
   #vimage_link = data['image_link']
   try:
       db.session.add(Venue(
@@ -652,12 +651,11 @@ def create_artist_submission():
   aphone = data['phone']
   agenres = data.getlist('genres')
   afb_link = data['facebook_link']
-  avenue = data['seeking_venue']
   adescription = data['seeking_description']
-  if avenue == 'y':
-    avenue = True
-  else:
+  if 'seeking_venue' not in data:
     avenue = False
+  else:
+    avenue = True
 
   try:
     db.session.add(Artist(name=aname,
