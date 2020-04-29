@@ -73,7 +73,24 @@
 		</div>
 		{% endfor %}
 	</div>
+	<button class="delete-button" data-id="{{ venue.id }}" value="Remove Venue"> Remove Venue </button>
 </section>
+
+<script>
+	const deletebuttons = document.querySelectorAll('.delete-button');
+        for (let i=0; i<deletebuttons.length; i++) {
+            const deletebutton = deletebuttons[i];
+            deletebutton.onclick = function(e){
+                const VenueId = e.target.dataset['id'];
+                console.log(VenueId);
+                fetch('/venues/' + VenueId, {
+                    method: 'DELETE',
+                })
+            }
+        }
+
+</script>
+
 
 {% endblock %}
 
