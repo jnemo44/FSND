@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: ee8175013f54
+Revision ID: ea903907c369
 Revises: 
-Create Date: 2020-04-24 11:15:38.627539
+Create Date: 2020-04-29 10:11:32.563439
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'ee8175013f54'
+revision = 'ea903907c369'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -24,10 +24,10 @@ def upgrade():
     sa.Column('city', sa.String(length=120), nullable=True),
     sa.Column('state', sa.String(length=120), nullable=True),
     sa.Column('phone', sa.String(length=120), nullable=True),
-    sa.Column('genres', sa.String(length=120), nullable=True),
-    sa.Column('image_link', sa.String(length=500), nullable=True),
+    sa.Column('genres', sa.String(), nullable=True),
     sa.Column('facebook_link', sa.String(length=120), nullable=True),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
     )
     op.create_table('Venue',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -36,18 +36,22 @@ def upgrade():
     sa.Column('state', sa.String(length=120), nullable=True),
     sa.Column('address', sa.String(length=120), nullable=True),
     sa.Column('phone', sa.String(length=120), nullable=True),
-    sa.Column('image_link', sa.String(length=500), nullable=True),
+    sa.Column('genres', sa.String(), nullable=True),
     sa.Column('facebook_link', sa.String(length=120), nullable=True),
-    sa.PrimaryKeyConstraint('id')
+    sa.Column('website', sa.String(length=500), nullable=True),
+    sa.Column('seeking_talent', sa.Boolean(), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('facebook_link'),
+    sa.UniqueConstraint('name')
     )
     op.create_table('Show',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('date_time', sa.Date(), nullable=False),
     sa.Column('artist_id', sa.Integer(), nullable=False),
     sa.Column('venue_id', sa.Integer(), nullable=False),
+    sa.Column('start_time', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['artist_id'], ['Artist.id'], ),
     sa.ForeignKeyConstraint(['venue_id'], ['Venue.id'], ),
-    sa.PrimaryKeyConstraint('id', 'artist_id', 'venue_id')
+    sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###
 
