@@ -645,6 +645,7 @@ def create_artist_submission():
   # Insert form data as a new Venue record in the db, instead
   error = False
   data = request.form
+  #if data.validate_on_submit():
   aname = data['name']
   acity = data['city']
   astate = data['state']
@@ -656,7 +657,6 @@ def create_artist_submission():
     avenue = False
   else:
     avenue = True
-
   try:
     db.session.add(Artist(name=aname,
     city=acity,
@@ -678,9 +678,10 @@ def create_artist_submission():
       flash('An error occurred. Artist ' +
             aname + ' could not be listed.')
       db.session.rollback()
+  #else:
+  #  flask('Venue ' + request.form['name'] + ' failed due to validation error!')
   return render_template('pages/home.html')
-
-
+  
 
 #  Shows
 #  ----------------------------------------------------------------
